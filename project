@@ -1,0 +1,29 @@
+pipeline {
+  agent any
+  stages {
+    stage('Checkout') {
+      steps { git url: 'https://github.com/you/your-app.git', branch: 'main' }
+    }
+    stage('Build') {
+      steps { script {
+        dockerImage = docker.build("your-app:${env.BUILD_NUMBER}")
+      }}
+    }
+    stage('Test') {
+      steps {
+        dockerImage.inside {
+          sh './run-tests.sh'
+        }
+      }
+    }
+    stage('Push') {
+      steps {
+        script {
+          docker.withRegistry('https://registry.hub.docker.com', 'dockerhub-creds') {
+            dockerImage.push()
+          }
+        }
+      }
+    }
+  }
+}
